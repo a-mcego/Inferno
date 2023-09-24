@@ -54,6 +54,8 @@
     <CodeAnalysisRuleSet>..\..\Inferno.ruleset</CodeAnalysisRuleSet>
     <OutDir>$(SolutionDir)bin\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin\$(ProjectName)\$(Platform)\$(Configuration)\obj\</IntDir>
+    <IncludePath>$(SolutionDir)vcpkg_installed\x64-windows\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)vcpkg_installed\x64-windows\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnableManifest>true</VcpkgEnableManifest>
