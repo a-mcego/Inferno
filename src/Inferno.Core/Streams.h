@@ -253,6 +253,27 @@ namespace Inferno {
             _stream.write((char*)&value, sizeof(T));
         }
 
+        void WriteFloatZV(const float value) {
+            _stream.write((char*)&value, sizeof(float));
+        }
+
+        void WriteStringZV(const string& value) {
+            Write(int(value.length()));
+            for (char c : value)
+                Write(c);
+        }
+
+        void WriteVector2ZV(const Vector2& v) {
+            WriteFloatZV(v.x);
+            WriteFloatZV(v.y);
+        }
+
+        void WriteVector3ZV(const Vector3& v) {
+            WriteFloatZV(v.x);
+            WriteFloatZV(v.y);
+            WriteFloatZV(v.z);
+        }
+
         void WriteFix(float f) {
             Write(FloatToFix(f));
         }

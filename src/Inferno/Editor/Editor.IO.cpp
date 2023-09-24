@@ -15,6 +15,7 @@
 
 namespace Inferno::Editor {
     constexpr auto METADATA_EXTENSION = "ied"; // inferno engine data
+    constexpr auto ZEROVORTEX_EXTENSION = "zv"; // ZV: zero vortex format level data
 
     size_t SaveLevel(Level& level, StreamWriter& writer) {
         if (level.Walls.size() >= (int)WallID::Max)
@@ -31,6 +32,10 @@ namespace Inferno::Editor {
             }
         }
         return level.Serialize(writer);
+    }
+
+    size_t SaveLevelZeroVortex(Level& level, StreamWriter& writer, const List<TexID>& texlist) {
+        return level.SerializeZeroVortex(writer, texlist);
     }
 
     // Saves a level to the file system
@@ -65,6 +70,17 @@ namespace Inferno::Editor {
         level.CameraTarget = Render::Camera.Target;
         level.CameraUp = Render::Camera.Up;
         SaveLevelMetadata(level, metadata);
+
+
+
+        filesystem::path zerovortexPath = path;
+        zerovortexPath.replace_extension(ZEROVORTEX_EXTENSION);
+        //std::ofstream zerovortexfile(zerovortexPath);
+        //SaveLevelZeroVortex(level, zerovortexfile);*/
+        std::ofstream zv_file(zerovortexPath, std::ios::binary);
+        StreamWriter zv_writer(zv_file, false);
+        SaveLevelZeroVortex(Game::Level, zv_writer, Resources::CopyLevelTextureLookup());
+
         SetStatusMessage(L"Saved level to {}", path.wstring());
 
         // Save custom textures
@@ -188,6 +204,7 @@ namespace Inferno::Editor {
 
             auto baseName = String::NameWithoutExtension(level.FileName);
             auto metadataName = baseName + "." + METADATA_EXTENSION;
+            auto zerovortexName = baseName + "." + ZEROVORTEX_EXTENSION;
             HogWriter writer(tempPath); // write to temp
             fmt::print("Copying existing HOG files:\n");
 
@@ -195,7 +212,7 @@ namespace Inferno::Editor {
                 // Does the file match the level name?
                 if (entry.NameWithoutExtension() == baseName) {
                     // Skip files serialized later
-                    constexpr std::array skippedExtensions = { ".dtx", ".pog", ".rl2", ".rdl", ".ied" };
+                    constexpr std::array skippedExtensions = { ".dtx", ".pog", ".rl2", ".rdl", ".ied", ".zv"};
                     auto ext = String::ToLower(entry.Extension());
                     if (Seq::contains(skippedExtensions, ext))
                         continue;
@@ -217,6 +234,10 @@ namespace Inferno::Editor {
             auto levelMetadata = SerializeLevelMetadata(level);
             writer.WriteEntry(metadataName, levelMetadata); // IED file
             fmt::print("{}:{} ", metadataName, levelMetadata.size());
+
+            auto levelDataZeroVortex = SerializeToMemory([&level](StreamWriter& w) { return SaveLevelZeroVortex(level, w, Resources::CopyLevelTextureLookup()); });
+            writer.WriteEntry(zerovortexName, levelDataZeroVortex);
+            fmt::print("{}:{} ", zerovortexName, levelDataZeroVortex.size());
 
             if (level.IsVertigo() && !mission.ContainsFileType(".ham"))
                 AppendVertigoData(writer, path.stem().string() + ".ham");

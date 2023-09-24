@@ -48,6 +48,70 @@ namespace Inferno {
             return size;
         }
 
+    
+        size_t WriteZeroVortex(StreamWriter& writer, const Level& level, const List<TexID>& texlist) {
+            writer.Write(MakeFourCC("ZVTX"));
+
+            Dictionary<int, string> texture_translate;
+            std::ifstream translate_file("water.lookup.txt");
+            while (true) {
+                int key;
+                string value;
+                translate_file >> key;
+                if (translate_file.eof())
+                    break;
+                translate_file >> value;
+                texture_translate[key] = value;
+            }
+            
+            writer.Write(int(level.Segments.size()));
+            for (int segment_id = 0; segment_id < level.Segments.size(); ++segment_id) {
+                const Segment& segment = level.Segments[segment_id];
+
+                writer.Write(int(segment_id));
+
+                const Array<int, 8> vertex_order{ 0,3,7,4,1,2,6,5 };
+
+                //default cube in descent is size 20, in ZV it's 12.
+                constexpr float WORLD_SCALE_MULTIPLIER = 12.0f/20.0f;
+
+                auto verts = segment.CopyVertices(level);
+                for (auto v_id : vertex_order) {
+                    writer.WriteVector3ZV(verts[v_id]*WORLD_SCALE_MULTIPLIER);
+                }
+
+                const Array<SideID, 6> face_traverse_order{ SideID{0},SideID{2},SideID{5},SideID{4},SideID{1},SideID{3} };
+                //const Array<SideID, 6> face_traverse_order{ SideID{0},SideID{5},SideID{1},SideID{4},SideID{3},SideID{2} };
+                for (SideID face_id : face_traverse_order) {
+                    if (!segment.SideHasConnection(face_id)) {
+                        const SegmentSide& sside = segment.GetSide(face_id);
+                        LevelTexID tex_id = sside.TMap;
+                        string texture = texture_translate[int(texlist[int(tex_id)])-1];
+                        writer.WriteStringZV(texture);
+                        writer.Write(int(face_id));
+                        writer.WriteVector2ZV(sside.UVs[3]);
+                        writer.WriteVector2ZV(sside.UVs[0]);
+                        writer.WriteVector2ZV(sside.UVs[1]);
+                        writer.WriteVector2ZV(sside.UVs[2]);
+                        writer.Write(int(-1));
+                    }
+                    else {
+                        writer.WriteStringZV("white");
+                        writer.Write(int(SideID::None));
+                        writer.WriteVector2ZV(Vector2(0.0f, 0.0f));
+                        writer.WriteVector2ZV(Vector2(0.0f, 0.0f));
+                        writer.WriteVector2ZV(Vector2(0.0f, 0.0f));
+                        writer.WriteVector2ZV(Vector2(0.0f, 0.0f));
+                        writer.Write(int(segment.GetConnection(face_id)));
+                    }
+                }
+
+                writer.Write(int(segment.Type));
+            }
+            auto size = writer.Position();
+            return size;
+        }
+
     private:
         static void WriteVersionSpecificLevelInfo(StreamWriter& writer, const Level& level) {
             if (level.Version >= 2)
@@ -599,14 +663,21 @@ namespace Inferno {
     };
 
     // Writes level data to a stream. Returns the number of bytes written.
-    size_t WriteLevel(const Level& level, StreamWriter& writer) {
+    //Test: is this even used?
+    //Result: apparently not.
+    /*size_t WriteLevel(const Level& level, StreamWriter& writer) {
         LevelWriter levelWriter;
         return levelWriter.Write(writer, level);
-    }
+    }*/
 
     size_t Level::Serialize(StreamWriter& writer) {
         LevelWriter levelWriter;
         GameVersion = IsDescent1() ? 25 : 32; // Always use the latest version
         return levelWriter.Write(writer, *this);
+    }
+    size_t Level::SerializeZeroVortex(StreamWriter& writer, const List<TexID>& texlist) {
+        LevelWriter levelWriter;
+        GameVersion = IsDescent1() ? 25 : 32; // Always use the latest version
+        return levelWriter.WriteZeroVortex(writer, *this, texlist);
     }
 }

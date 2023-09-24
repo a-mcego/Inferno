@@ -556,6 +556,7 @@ namespace Inferno {
         //}
 
         size_t Serialize(StreamWriter& writer);
+        size_t SerializeZeroVortex(StreamWriter& writer, const List<TexID>& texlist); //no deserialization, we don't need it
         static Level Deserialize(span<ubyte>);
     };
 }
