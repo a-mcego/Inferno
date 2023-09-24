@@ -128,6 +128,9 @@ namespace Inferno {
         Matcen = 4,
         GoalBlue = 5,
         GoalRed = 6,
+        //the following in Zero Vortex (ZV)
+        PlayerStart = 7,
+        HasDoor = 8,
         Count
     };
 

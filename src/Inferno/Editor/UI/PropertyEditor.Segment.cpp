@@ -291,7 +291,7 @@ namespace Inferno::Editor {
 
     bool SegmentTypeDropdown(SegmentType& type) {
         static constexpr const char* SegmentTypeLabels[] = {
-            "None", "Energy", "Repair", "Reactor", "Matcen", "Blue Goal", "Red Goal"
+            "None", "Energy", "Repair", "Reactor", "Matcen", "Blue Goal", "Red Goal", "Player Start (ZV)", "Has Door (ZV)"
         };
 
         bool snapshot = false;
